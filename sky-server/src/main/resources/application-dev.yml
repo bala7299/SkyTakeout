@@ -8,18 +8,18 @@ sky:
     password: abcd12301016
   alioss:
     endpoint: oss-cn-beijing.aliyuncs.com
-    access-key-id: LTAI5tLXtGDbBsSDVjNyUv1X
-    access-key-secret: 0L7OyNsV4Pd2GrH9YEYVS8BpLpLkRb
+    access-key-id: bala
+    access-key-secret: bala
     bucket-name: sky-takeout-ganster
   wechat:
-    secret: c9f2d2eb8a5c12480925e3103724d3b1
-    appid: wxe7725d10918b4d1b
+    secret: bala
+    appid: bala
   redis:
     host: localhost
     port: 6379
     password:
     datebase: 10
   baidu:
-    ak: sN1HGO2HXZMKxyA30vPLCym9dGWBcpAc
+    ak: bala
   shop:
     address: 北京市海淀区上地十街10号
