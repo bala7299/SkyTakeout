@@ -4,7 +4,7 @@
 *.class
 *Test.java
 **/test/
-
+**/application-dev.yml
 *.exe
 nginx/logs/
 nginx/temp/
