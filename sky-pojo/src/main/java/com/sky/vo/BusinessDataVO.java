@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * 数据概览
@@ -16,7 +17,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class BusinessDataVO implements Serializable {
 
-    private Double turnover;//营业额
+    private BigDecimal turnover;//营业额
 
     private Integer validOrderCount;//有效订单数
 
