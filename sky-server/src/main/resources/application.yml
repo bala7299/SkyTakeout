@@ -60,4 +60,12 @@ sky:
   shop:
     address: ${sky.shop.address}
 
+  comment:
+    # 本地 Python AI 润色服务地址（GET ?content= 原始评论）
+    ai-optimize-url: http://localhost:8000/ai-optimize
+
+  report:
+    # 本地 Python AI 经营诊断报表（POST JSON：差评正文列表）
+    ai-report-url: http://localhost:8000/ai-report
+
 

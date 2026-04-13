@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class HttpClientUtil {
 
-    static final  int TIMEOUT_MSEC = 5 * 1000;
+    static final  int TIMEOUT_MSEC = 30 * 1000;
 
     /**
      * 发送GET方式请求
@@ -169,6 +169,48 @@ public class HttpClientUtil {
 
         return resultString;
     }
+
+    /**
+     * POST 原始 JSON 请求体（Content-Type: application/json）
+     *
+     * @param url      请求地址
+     * @param jsonBody 已序列化好的 JSON 字符串，例如数组或对象
+     * @return 响应体字符串；非 200 或异常时返回空字符串
+     */
+    public static String doPostJsonBody(String url, String jsonBody) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpResponse response = null;
+        String resultString = "";
+
+        try {
+            HttpPost httpPost = new HttpPost(url);
+            if (jsonBody != null) {
+                StringEntity entity = new StringEntity(jsonBody, "UTF-8");
+                entity.setContentEncoding("UTF-8");
+                entity.setContentType("application/json; charset=UTF-8");
+                httpPost.setEntity(entity);
+            }
+            httpPost.setConfig(builderRequestConfig());
+            response = httpClient.execute(httpPost);
+            if (response.getStatusLine().getStatusCode() == 200) {
+                resultString = EntityUtils.toString(response.getEntity(), "UTF-8");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (response != null) {
+                    response.close();
+                }
+                httpClient.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return resultString;
+    }
+
     private static RequestConfig builderRequestConfig() {
         return RequestConfig.custom()
                 .setConnectTimeout(TIMEOUT_MSEC)

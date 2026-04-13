@@ -1,18 +1,23 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.sky.dto.GoodsSalesDTO;
 import com.sky.entity.Orders;
+import com.sky.mapper.OrderCommentMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
-import com.sky.result.Result;
 import com.sky.service.ReportService;
 import com.sky.service.WorkspaceService;
+import com.sky.utils.HttpClientUtil;
 import com.sky.vo.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletOutputStream;
@@ -30,13 +35,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ReportServiceImpl implements ReportService {
+
+    private static final String AI_ADVICE_FALLBACK = "诊断报告生成中，请稍候...";
+
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
     private UserMapper userMapper;
     @Autowired
     private WorkspaceService workspaceService;
+    @Autowired
+    private OrderCommentMapper orderCommentMapper;
+    @Value("${sky.report.ai-report-url:http://localhost:8000/ai-report}")
+    private String aiReportUrl;
 
     /**
      * 营业额统计
@@ -181,6 +194,61 @@ public class ReportServiceImpl implements ReportService {
         String name = StringUtils.join(nameList, ",");
         String number = StringUtils.join(countList, ",");
         return new SalesTop10ReportVO(name, number);
+    }
+
+    /**
+     * AI 经营诊断：差评数量、差评关联菜品 TOP5、调用 Python 生成诊断文案
+     */
+    public AiDiagnosisVO getAiDiagnosis(LocalDate begin, LocalDate end) {
+        LocalDateTime beginTime = LocalDateTime.of(begin, LocalTime.MIN);
+        LocalDateTime endTime = LocalDateTime.of(end, LocalTime.MAX);
+
+        Integer totalBad = orderCommentMapper.countBadReviewsByDateRange(beginTime, endTime);
+        if (totalBad == null) {
+            totalBad = 0;
+        }
+
+        List<GoodsSalesDTO> topBadDishes = orderCommentMapper.listTopBadDishesByDateRange(beginTime, endTime);
+        if (topBadDishes == null) {
+            topBadDishes = new ArrayList<>();
+        }
+        List<String> dishNames = topBadDishes.stream().map(GoodsSalesDTO::getName).collect(Collectors.toList());
+        List<Integer> badCounts = topBadDishes.stream().map(GoodsSalesDTO::getNumber).collect(Collectors.toList());
+
+        List<String> badContents = orderCommentMapper.listBadReviewContentsByDateRange(beginTime, endTime);
+        if (badContents == null) {
+            badContents = new ArrayList<>();
+        }
+        String aiAdvice = fetchWeeklyReportFromPython(badContents);
+
+        return AiDiagnosisVO.builder()
+                .totalBadReviews(totalBad)
+                .aiAdvice(aiAdvice)
+                .dishNames(dishNames)
+                .badCounts(badCounts)
+                .build();
+    }
+
+    /**
+     * POST 差评正文列表到 Python，解析 weekly_report；失败时返回兜底文案，不影响统计数字。
+     */
+    private String fetchWeeklyReportFromPython(List<String> contents) {
+        try {
+            String jsonBody = JSON.toJSONString(contents);
+            String body = HttpClientUtil.doPostJsonBody(aiReportUrl, jsonBody);
+            if (StringUtils.isBlank(body)) {
+                return AI_ADVICE_FALLBACK;
+            }
+            JSONObject jsonObject = JSON.parseObject(body);
+            String weeklyReport = jsonObject.getString("weekly_report");
+            if (StringUtils.isBlank(weeklyReport)) {
+                return AI_ADVICE_FALLBACK;
+            }
+            return weeklyReport;
+        } catch (Exception e) {
+            log.warn("调用 AI 经营诊断接口失败", e);
+            return AI_ADVICE_FALLBACK;
+        }
     }
 
     /**

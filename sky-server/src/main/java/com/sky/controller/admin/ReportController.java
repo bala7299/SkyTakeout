@@ -2,6 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.result.Result;
 import com.sky.service.ReportService;
+import com.sky.vo.AiDiagnosisVO;
 import com.sky.vo.OrderReportVO;
 import com.sky.vo.SalesTop10ReportVO;
 import com.sky.vo.TurnoverReportVO;
@@ -89,6 +90,25 @@ public class ReportController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
         log.info("{} 到 {} 销售前十统计", begin, end);
         return Result.success(reportService.salesTop10Report(begin, end));
+    }
+
+    /**
+     * AI 经营诊断
+     *
+     * @param begin 开始日期，可为空；与 end 任一为 null 时默认最近 7 天（含今天共 7 个自然日）
+     * @param end   结束日期，可为空
+     */
+    @ApiOperation("AI 经营诊断")
+    @GetMapping("/aiDiagnosis")
+    public Result<AiDiagnosisVO> aiDiagnosis(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        if (begin == null || end == null) {
+            end = LocalDate.now();
+            begin = end.minusDays(6);
+        }
+        log.info("{} 到 {} AI 经营诊断", begin, end);
+        return Result.success(reportService.getAiDiagnosis(begin, end));
     }
 
     /**
