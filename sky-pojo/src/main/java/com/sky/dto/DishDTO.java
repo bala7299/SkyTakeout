@@ -21,6 +21,8 @@ public class DishDTO implements Serializable {
     private String image;
     //描述信息
     private String description;
+    //风味标签
+    private String flavorTag;
     //0 停售 1 起售
     private Integer status;
     //口味

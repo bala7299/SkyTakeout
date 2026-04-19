@@ -1,11 +1,10 @@
 package com.sky.mapper;
 
-import com.sky.annotation.AutoFill;
 import com.sky.entity.User;
-import com.sky.enumeration.OperationType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
 import java.util.Map;
 
 @Mapper
@@ -17,7 +16,6 @@ public interface UserMapper {
      * @param openid
      * @return
      */
-    @Select("select * from user where openid = #{openid}")
     User getByOpenId(String openid);
 
     /**
@@ -31,8 +29,13 @@ public interface UserMapper {
      * @param userId
      * @return
      */
-    @Select("select * from user where id = #{userId}")
     User getById(Long userId);
+
+    /**
+     * 更新用户信息
+     * @param user
+     */
+    void update(User user);
 
     /**
      * 根据日期查询用户数量
@@ -40,4 +43,11 @@ public interface UserMapper {
      * @return
      */
     Integer countUserByDate(Map map);
+
+    /**
+     * 查询所有未设置口味画像的用户
+     * @return 未设置画像的用户列表
+     */
+    @Select("SELECT * FROM user WHERE flavor_profile IS NULL OR flavor_profile = ''")
+    List<User> getUsersWithoutProfile();
 }

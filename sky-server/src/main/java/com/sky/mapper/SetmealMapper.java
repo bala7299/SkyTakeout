@@ -93,4 +93,11 @@ public interface SetmealMapper {
      * @return
      */
     Integer countByMap(Map map);
+
+    /**
+     * 查询所有未标记口味标签的套餐
+     * @return 未标记的套餐列表
+     */
+    @Select("SELECT * FROM setmeal WHERE flavor_tag IS NULL OR flavor_tag = ''")
+    List<Setmeal> getUnlabeledSetmeals();
 }

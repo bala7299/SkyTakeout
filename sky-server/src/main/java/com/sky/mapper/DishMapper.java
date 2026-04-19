@@ -83,4 +83,11 @@ public interface DishMapper {
      * @return
      */
     Integer countByMap(Map map);
+
+    /**
+     * 查询所有未标记口味标签的菜品
+     * @return 未标记的菜品列表
+     */
+    @Select("SELECT * FROM dish WHERE flavor_tag IS NULL OR flavor_tag = ''")
+    List<Dish> getUnlabeledDishes();
 }

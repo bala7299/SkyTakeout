@@ -6,9 +6,9 @@
 
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into dish(name, category_id,price, image, description, status, create_time, update_time, create_user, update_user)
+        insert into dish(name, category_id,price, image, description, flavor_tag, status, create_time, update_time, create_user, update_user)
         value
-            (#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{status}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})
+            (#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{flavorTag}, #{status}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser})
     </insert>
     <update id="update">
         update dish
@@ -18,6 +18,7 @@
             <if test="price != null">price=#{price},</if>
             <if test="image != null">image=#{image},</if>
             <if test="description != null">description=#{description},</if>
+            <if test="flavorTag != null">flavor_tag=#{flavorTag},</if>
             <if test="updateTime != null">update_time=#{updateTime},</if>
             <if test="updateUser != null">update_user=#{updateUser},</if>
             <if test="status != null">status=#{status},</if>
@@ -35,7 +36,20 @@
     </delete>
 
     <select id="pageQuery" resultType="com.sky.vo.DishVO">
-        select d.* ,c.name as categoryName from dish d left outer join category c on d.category_id = c.id
+        select d.id,
+               d.name,
+               d.category_id,
+               d.price,
+               d.image,
+               d.description,
+               d.flavor_tag,
+               d.status,
+               d.create_time,
+               d.update_time,
+               d.create_user,
+               d.update_user,
+               c.name as categoryName
+        from dish d left outer join category c on d.category_id = c.id
         <where>
             <if test="name != null">
                 and d.name like concat("%",#{name},"%")

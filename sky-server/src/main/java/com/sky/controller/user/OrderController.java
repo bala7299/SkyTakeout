@@ -36,7 +36,7 @@ public class OrderController {
     @PostMapping("/submit")
     public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
         OrderSubmitVO orderSubmitVO = orderService.submit(ordersSubmitDTO);
-        return Result.success();
+        return Result.success(orderSubmitVO);
     }
 
     /**

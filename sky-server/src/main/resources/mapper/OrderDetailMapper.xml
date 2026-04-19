@@ -11,4 +11,18 @@
             (#{od.name}, #{od.image}, #{od.orderId}, #{od.dishId}, #{od.setmealId}, #{od.dishFlavor}, #{od.amount})
         </foreach>
     </insert>
+
+    <select id="getTopSales" resultType="com.sky.dto.TopSalesItemDTO">
+        SELECT
+            MAX(dish_id) AS dish_id,
+            MAX(setmeal_id) AS setmeal_id,
+            name,
+            MAX(image) AS image,
+            MAX(amount) AS price,
+            SUM(number) AS total_sales
+        FROM order_detail
+        GROUP BY name
+        ORDER BY total_sales DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

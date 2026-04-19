@@ -13,6 +13,7 @@ import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
+import com.sky.service.AIService;
 import com.sky.service.OrderService;
 import com.sky.utils.BaiduMapUtil;
 import com.sky.utils.WeChatPayUtil;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -52,6 +54,8 @@ public class OrderServiceImpl implements OrderService {
     private WeChatPayUtil weChatPayUtil;
     @Autowired
     private BaiduMapUtil baiduMapUtil;
+    @Autowired
+    private AIService aiService;
     @Value("${sky.shop.address}")
     private String shopAddress;
     @Autowired
@@ -81,12 +85,14 @@ public class OrderServiceImpl implements OrderService {
         if (list == null || list.size() == 0) {
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
+        /**
         //查看是否超出配送范围5km
         String userAddress = addressBook.getProvinceName() + addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail();
         Integer distance = baiduMapUtil.getDistance(baiduMapUtil.getCoordinate(userAddress), baiduMapUtil.getCoordinate(shopAddress));
         if (distance > 5000) {
             throw new OrderBusinessException(MessageConstant.OUT_OF_DELIVERY_DISTANCE);
         }
+         */
         //向订单表插入一条数据
         Orders orders = new Orders();
         BeanUtils.copyProperties(ordersSubmitDTO, orders);
@@ -435,6 +441,61 @@ public class OrderServiceImpl implements OrderService {
         orders.setStatus(Orders.COMPLETED);
         orders.setDeliveryTime(LocalDateTime.now());
         orderMapper.update(orders);
+
+        // 异步更新用户口味画像
+        CompletableFuture.runAsync(() -> {
+            try {
+                updateUserFlavorProfile(ordersDB);
+            } catch (Exception e) {
+                log.error("异步更新用户口味画像失败，订单ID: {}, 错误信息: {}", id, e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * 更新用户口味画像
+     * @param orders 订单信息
+     */
+    private void updateUserFlavorProfile(Orders orders) {
+        try {
+            // 获取订单包含的所有菜品/套餐名称
+            List<OrderDetail> orderDetails = orderDetailMapper.selectByOrderId(orders.getId());
+            List<String> dishNames = orderDetails.stream()
+                    .map(OrderDetail::getName)
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (dishNames.isEmpty()) {
+                log.warn("订单 {} 中没有菜品信息，跳过口味画像更新", orders.getId());
+                return;
+            }
+
+            // 获取该用户的当前口味画像
+            User user = userMapper.getById(orders.getUserId());
+            if (user == null) {
+                log.warn("用户 {} 不存在，跳过口味画像更新", orders.getUserId());
+                return;
+            }
+
+            // 哪怕他是个新用户，我们也得给 Python 传一句人话，不然 AI 不知道怎么接茬
+            String currentProfile = (user.getFlavorProfile() != null && !user.getFlavorProfile().trim().isEmpty())
+                    ? user.getFlavorProfile()
+                    : "暂无历史口味，这是该用户的第一次点单";
+
+            // 调用AI服务更新口味画像
+            String newProfile = aiService.updateFlavorProfile(currentProfile, dishNames);
+
+            // 将AI返回的新画像更新到用户表中
+            User updateUser = User.builder()
+                    .id(user.getId())
+                    .flavorProfile(newProfile)
+                    .flavorUpdateTime(LocalDateTime.now())
+                    .build();
+            userMapper.update(updateUser);
+
+            log.info("用户 {} 口味画像更新成功，订单ID: {}", user.getId(), orders.getId());
+        } catch (Exception e) {
+            log.error("更新用户口味画像失败，订单ID: {}, 错误信息: {}", orders.getId(), e.getMessage());
+        }
     }
 
     /**

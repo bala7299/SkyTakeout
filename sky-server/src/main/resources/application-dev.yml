@@ -12,14 +12,14 @@ sky:
     access-key-secret: bala
     bucket-name: sky-takeout-ganster
   wechat:
-    secret: bala
-    appid: bala
+    secret: c9f2d2eb8a5c12480925e3103724d3b1
+    appid: wxe7725d10918b4d1b
   redis:
     host: localhost
     port: 6379
     password:
     datebase: 10
   baidu:
-    ak: bala
+    ak: sN1HGO2HXZMKxyA30vPLCym9dGWBcpAc
   shop:
     address: 北京市海淀区上地十街10号

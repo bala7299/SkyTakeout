@@ -98,4 +98,12 @@ public interface OrderMapper {
      * @return
      */
     List<GoodsSalesDTO> goodsSalesTop10(Map map);
+
+    /**
+     * 查询用户所有已完成的订单ID
+     * @param userId 用户ID
+     * @return 已完成订单ID列表
+     */
+    @Select("SELECT id FROM orders WHERE user_id = #{userId} AND status = 5")
+    List<Long> getCompletedOrderIdsByUserId(Long userId);
 }

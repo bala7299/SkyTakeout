@@ -40,7 +40,13 @@ public class ShopController {
     @GetMapping("/status")
     @ApiOperation("查询店铺营业状态")
     public Result<Integer> getStatus() {
-        Integer shopStatus = (Integer) redisTemplate.opsForValue().get(KEY);
+        Object statusObj = (Integer) redisTemplate.opsForValue().get(KEY);
+        Integer shopStatus = (statusObj != null) ? (Integer) statusObj : 0;
+        // 优化点：如果 Redis 没值（比如被删了），给一个默认值 0（打烊）
+        // 这样前端会显示“打烊”，而不是直接 500 崩溃
+        if (statusObj == null) {
+            log.warn("警告：Redis 中未找到营业状态缓存，已自动降级为【打烊】状态。");
+        }
         log.info("当前店铺营业状态为：{}", shopStatus == 1 ? "营业中" : "店铺打烊");
         return Result.success(shopStatus);
     }

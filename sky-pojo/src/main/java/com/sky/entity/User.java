@@ -39,4 +39,10 @@ public class User implements Serializable {
 
     //注册时间
     private LocalDateTime createTime;
+
+    //用户口味画像
+    private String flavorProfile;
+
+    //口味更新时间
+    private LocalDateTime flavorUpdateTime;
 }

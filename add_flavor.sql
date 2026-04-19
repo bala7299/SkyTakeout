@@ -1,0 +1,9 @@
+-- 用户表
+ALTER TABLE user ADD COLUMN flavor_profile VARCHAR(255) DEFAULT NULL COMMENT '用户口味画像';
+ALTER TABLE user ADD COLUMN flavor_update_time DATETIME DEFAULT NULL COMMENT '口味画像更新时间';
+
+-- 菜品表
+ALTER TABLE dish ADD COLUMN flavor_tag VARCHAR(255) DEFAULT NULL COMMENT '菜品口味标签';
+
+-- 套餐表
+ALTER TABLE setmeal ADD COLUMN flavor_tag VARCHAR(255) DEFAULT NULL COMMENT '套餐口味标签';

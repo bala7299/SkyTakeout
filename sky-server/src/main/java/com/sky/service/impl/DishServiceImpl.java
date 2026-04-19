@@ -13,6 +13,7 @@ import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
+import com.sky.service.AIService;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ public class DishServiceImpl implements DishService {
     private DishFlavorMapper dishFlavorMapper;
     @Autowired
     private SetmealMapper setmealMapper;
+    @Autowired
+    private AIService aiService;
 
     /**
      * 新增菜品
@@ -45,6 +48,13 @@ public class DishServiceImpl implements DishService {
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
         dish.setStatus(StatusConstant.DISABLE);
+        
+        // 提取口味标签
+        if (dishDTO.getDescription() != null) {
+            String flavorTag = aiService.extractFlavorTag(dishDTO.getName(), dishDTO.getDescription());
+            dish.setFlavorTag(flavorTag);
+        }
+        
         //向菜表加入一条数据
         dishMapper.insert(dish);
         List<DishFlavor> dishFlavorList = dishDTO.getFlavors();
@@ -56,6 +66,12 @@ public class DishServiceImpl implements DishService {
                 dishFlavor.setDishId(dishid);
             }
             dishFlavorMapper.insertBatch(dishFlavorList);
+        }
+        
+        // 菜品向量入库
+        if (dish.getFlavorTag() != null) {
+            String vectorId = "D_" + dishid;
+            aiService.syncDishToVectorDB(vectorId, dish.getName(), dish.getFlavorTag());
         }
     }
 
@@ -125,6 +141,13 @@ public class DishServiceImpl implements DishService {
         //DishDTO里面的数据有多余（口味数据）  口味数据不属于dish表 因此要将属于dish表的数据提取出来再更新
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO, dish);
+        
+        // 提取口味标签
+        if (dishDTO.getDescription() != null) {
+            String flavorTag = aiService.extractFlavorTag(dishDTO.getName(), dishDTO.getDescription());
+            dish.setFlavorTag(flavorTag);
+        }
+        
         dishMapper.update(dish);
         //然后再批量修改口味表    先删再插
         List<DishFlavor> dishFlavorList = dishDTO.getFlavors();
@@ -135,6 +158,12 @@ public class DishServiceImpl implements DishService {
                 dishFlavor.setDishId(dishDTO.getId());
             }
             dishFlavorMapper.insertBatch(dishFlavorList);
+        }
+        
+        // 菜品向量入库
+        if (dish.getFlavorTag() != null) {
+            String vectorId = "D_" + dishDTO.getId();
+            aiService.syncDishToVectorDB(vectorId, dishDTO.getName(), dish.getFlavorTag());
         }
     }
 

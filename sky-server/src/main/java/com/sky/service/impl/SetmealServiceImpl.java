@@ -15,6 +15,7 @@ import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
+import com.sky.service.AIService;
 import com.sky.service.SetmealService;
 import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
@@ -36,6 +37,8 @@ public class SetmealServiceImpl implements SetmealService {
     private SetmealDishMapper setmealDishMapper;
     @Autowired
     private DishMapper dishMapper;
+    @Autowired
+    private AIService aiService;
 
     /**
      * 新增套餐，同时需要保存套餐和菜品的关联关系
@@ -46,6 +49,12 @@ public class SetmealServiceImpl implements SetmealService {
     public void saveWithDish(SetmealDTO setmealDTO) {
         Setmeal setmeal = new Setmeal();
         BeanUtils.copyProperties(setmealDTO, setmeal);
+
+        // 提取口味标签
+        if (setmealDTO.getDescription() != null) {
+            String flavorTag = aiService.extractFlavorTag(setmealDTO.getName(), setmealDTO.getDescription());
+            setmeal.setFlavorTag(flavorTag);
+        }
 
         //向套餐表插入数据
         setmealMapper.insert(setmeal);
@@ -60,6 +69,12 @@ public class SetmealServiceImpl implements SetmealService {
 
         //保存套餐和菜品的关联关系
         setmealDishMapper.insertBatch(setmealDishes);
+
+        // 套餐向量入库
+        if (setmeal.getFlavorTag() != null) {
+            String vectorId = "S_" + setmealId;
+            aiService.syncDishToVectorDB(vectorId, setmeal.getName(), setmeal.getFlavorTag());
+        }
     }
 
     /**
@@ -126,6 +141,12 @@ public class SetmealServiceImpl implements SetmealService {
         Setmeal setmeal = new Setmeal();
         BeanUtils.copyProperties(setmealDTO, setmeal);
 
+        // 提取口味标签
+        if (setmealDTO.getDescription() != null) {
+            String flavorTag = aiService.extractFlavorTag(setmealDTO.getName(), setmealDTO.getDescription());
+            setmeal.setFlavorTag(flavorTag);
+        }
+
         //1、修改套餐表，执行update
         setmealMapper.update(setmeal);
         //套餐id
@@ -140,6 +161,12 @@ public class SetmealServiceImpl implements SetmealService {
         });
         //3、重新插入套餐和菜品的关联关系，操作setmeal_dish表，执行insert
         setmealDishMapper.insertBatch(setmealDishes);
+
+        // 套餐向量入库
+        if (setmeal.getFlavorTag() != null) {
+            String vectorId = "S_" + setmealId;
+            aiService.syncDishToVectorDB(vectorId, setmealDTO.getName(), setmeal.getFlavorTag());
+        }
     }
 
     /**
