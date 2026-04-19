@@ -1,11 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/sky_take_out?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: abcd12301016
+    driver-class-name: com.mysql.cj.jdbc.Driver
 sky:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
     host: localhost
     port: 3306
     database: sky_take_out
     username: root
     password: abcd12301016
+    driver-class-name: com.mysql.cj.jdbc.Driver
   alioss:
     endpoint: oss-cn-beijing.aliyuncs.com
     access-key-id: bala
@@ -23,3 +29,6 @@ sky:
     ak: sN1HGO2HXZMKxyA30vPLCym9dGWBcpAc
   shop:
     address: 北京市海淀区上地十街10号
+  ai:
+    openai:
+      deepseek-key: sk-aeb16031694441afa0c7d9d8b2573766

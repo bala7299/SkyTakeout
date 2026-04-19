@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.sky.mapper.OrderCommentMapper">
+
+    <!-- 管理端 / 用户端分页共用动态条件 -->
+    <sql id="commentPageWhere">
+        <where>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="score != null">
+                and score = #{score}
+            </if>
+            <if test="orderId != null">
+                and order_id = #{orderId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 管理端：含 AI 润色字段 -->
+    <select id="pageQuery" resultType="com.sky.vo.AdminCommentVO">
+        select id, order_id, score, content, ai_optimized, reply_content, create_time, status
+        from sky_take_out.order_comment
+        <include refid="commentPageWhere"/>
+        order by create_time desc
+    </select>
+
+    <!-- 用户端：不含 ai_optimized，映射 CommentVO -->
+    <select id="pageQuery4User" resultType="com.sky.vo.CommentVO">
+        select id,
+               order_id,
+               score,
+               content,
+               reply_content,
+               create_time
+        from sky_take_out.order_comment
+        <include refid="commentPageWhere"/>
+        order by create_time desc
+    </select>
+
+    <update id="update" parameterType="com.sky.entity.OrderComment">
+        update sky_take_out.order_comment
+        <set>
+            <if test="orderId != null">order_id = #{orderId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="aiOptimized != null">ai_optimized = #{aiOptimized},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="replyContent != null">reply_content = #{replyContent},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="countBadReviewsByDateRange" resultType="java.lang.Integer">
+        select count(*)
+        from sky_take_out.order_comment
+        where score &lt;= 2
+          and create_time &gt;= #{beginTime}
+          and create_time &lt;= #{endTime}
+    </select>
+
+    <select id="listTopBadDishesByDateRange" resultType="com.sky.dto.GoodsSalesDTO">
+        select d.name  as name,
+               count(*) as number
+        from sky_take_out.order_comment c
+                 inner join sky_take_out.order_detail d on c.order_id = d.order_id
+        where c.score &lt;= 2
+          and c.create_time &gt;= #{beginTime}
+          and c.create_time &lt;= #{endTime}
+          and d.name is not null
+          and d.name != ''
+        group by d.name
+        order by number desc
+        limit 5
+    </select>
+
+    <select id="listBadReviewContentsByDateRange" resultType="java.lang.String">
+        select content
+        from sky_take_out.order_comment
+        where score &lt;= 2
+          and create_time &gt;= #{beginTime}
+          and create_time &lt;= #{endTime}
+          and content is not null
+          and content != ''
+    </select>
+</mapper>

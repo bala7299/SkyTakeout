@@ -1,13 +1,16 @@
 package com.sky.controller.user;
 
 import com.sky.constant.JwtClaimsConstant;
+import com.sky.dto.AiChatDTO;
 import com.sky.dto.UserLoginDTO;
 import com.sky.entity.User;
 import com.sky.properties.JwtProperties;
 import com.sky.result.Result;
+import com.sky.service.AIService;
 import com.sky.service.OrderService;
 import com.sky.service.UserService;
 import com.sky.utils.JwtUtil;
+import com.sky.vo.AiChatVO;
 import com.sky.vo.UserLoginVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -30,6 +33,8 @@ public class UserController {
     private JwtProperties jwtProperties;
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private AIService aiService;
 
     /**
      * 用户登录
@@ -56,5 +61,18 @@ public class UserController {
     public Result reminder(@PathVariable Long id){
         orderService.reminder(id);
         return Result.success();
+    }
+
+    /**
+     * AI智能客服对话
+     * @param aiChatDTO 用户消息
+     * @return AI回复
+     */
+    @ApiOperation("AI智能客服对话")
+    @PostMapping("/aiChat")
+    public Result<AiChatVO> aiChat(@RequestBody AiChatDTO aiChatDTO) {
+        log.info("用户发起AI客服对话: {}", aiChatDTO.getMessage());
+        AiChatVO aiChatVO = aiService.chat(aiChatDTO);
+        return Result.success(aiChatVO);
     }
 }

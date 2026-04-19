@@ -12,12 +12,21 @@ spring:
       url: jdbc:mysql://${sky.datasource.host}:${sky.datasource.port}/${sky.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: ${sky.datasource.username}
       password: ${sky.datasource.password}
-  redis:
-    host: ${sky.redis.host}
-    password: ${sky.redis.password}
-    port: ${sky.redis.port}
-    database: ${sky.redis.datebase}
+  ai:
+    openai:
+      api-key: ${sky.ai.openai.deepseek-key}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.3
 
+  data:
+    redis:
+      host: ${sky.redis.host}
+      password: ${sky.redis.password}
+      database: ${sky.redis.datebase}
+      port: ${sky.redis.port}
 mybatis:
   #mapper配置文件
   mapper-locations: classpath:mapper/*.xml
@@ -33,7 +42,6 @@ logging:
         mapper: debug
         service: info
         controller: info
-
 sky:
   jwt:
     # 设置jwt签名加密时使用的秘钥
@@ -67,5 +75,4 @@ sky:
   report:
     # 本地 Python AI 经营诊断报表（POST JSON：差评正文列表）
     ai-report-url: http://localhost:8000/ai-report
-
 
