@@ -5,8 +5,8 @@ import com.sky.dto.CommentReplyDTO;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.OrderCommentService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController("adminOrderCommentController")
 @RequestMapping("/admin/comment")
-@Api(tags = "管理端-评价接口")
+@Tag(name = "管理端-评价接口")
 @Slf4j
 public class OrderCommentController {
 
@@ -31,7 +31,7 @@ public class OrderCommentController {
      * @return 分页结果
      */
     @GetMapping("/page")
-    @ApiOperation("条件分页查询评价列表")
+    @Operation(summary = "条件分页查询评价列表")
     public Result<PageResult> page(CommentPageQueryDTO commentPageQueryDTO) {
         log.info("管理端评价分页查询：{}", commentPageQueryDTO);
         PageResult pageResult = orderCommentService.pageQuery(commentPageQueryDTO);
@@ -45,7 +45,7 @@ public class OrderCommentController {
      * @return 操作结果
      */
     @PutMapping("/reply")
-    @ApiOperation("商家回复评价")
+    @Operation(summary = "商家回复评价")
     public Result<String> reply(@RequestBody CommentReplyDTO commentReplyDTO) {
         log.info("商家回复评价：{}", commentReplyDTO);
         orderCommentService.replyComment(commentReplyDTO);

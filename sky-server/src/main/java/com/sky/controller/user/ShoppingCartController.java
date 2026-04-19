@@ -6,8 +6,8 @@ import com.sky.entity.Setmeal;
 import com.sky.entity.ShoppingCart;
 import com.sky.result.Result;
 import com.sky.service.ShoppingCartService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @Slf4j
-@Api(tags = "C端-购物车相关接口")
+@Tag(name = "C端-购物车相关接口")
 @RequestMapping("/user/shoppingCart")
 public class ShoppingCartController {
 
@@ -24,7 +24,7 @@ public class ShoppingCartController {
     private ShoppingCartService shoppingCartService;
 
     @PostMapping("/add")
-    @ApiOperation("添加购物车")
+    @Operation(summary = "添加购物车")
     public Result add(@RequestBody ShoppingCartDTO shoppingCartDTO) {
         log.info("添加购物车：{}", shoppingCartDTO);
         shoppingCartService.add(shoppingCartDTO);
@@ -37,7 +37,7 @@ public class ShoppingCartController {
      * @return
      */
     @GetMapping("/list")
-    @ApiOperation("查看购物车")
+    @Operation(summary = "查看购物车")
     public Result<List<ShoppingCart>> list() {
         Long userId = BaseContext.getCurrentId();
         ShoppingCart shoppingCart = ShoppingCart.builder().userId(userId).build();
@@ -50,7 +50,7 @@ public class ShoppingCartController {
      *
      * @return
      */
-    @ApiOperation("清空购物车")
+    @Operation(summary = "清空购物车")
     @DeleteMapping("/clean")
     public Result delete() {
         Long userId = BaseContext.getCurrentId();
@@ -60,7 +60,7 @@ public class ShoppingCartController {
     }
 
     @PostMapping("/sub")
-    @ApiOperation("删除购物车中单个商品")
+    @Operation(summary = "删除购物车中单个商品")
     public Result deleteSinglecart(@RequestBody ShoppingCartDTO shoppingCartDTO) {
         log.info("删除单个购物车商品：{}", shoppingCartDTO);
         Long userId = BaseContext.getCurrentId();

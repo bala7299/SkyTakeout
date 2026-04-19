@@ -1,15 +1,14 @@
 package com.sky.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
-@ApiModel(description = "AI智能客服对话请求参数")
+@Schema(description = "AI智能客服对话请求参数")
 public class AiChatDTO implements Serializable {
 
-    @ApiModelProperty(value = "用户发送的消息内容", required = true)
+    @Schema(description = "用户发送的消息内容", required = true)
     private String message;
 }

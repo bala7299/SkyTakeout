@@ -1,7 +1,6 @@
 package com.sky.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +12,9 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel(description = "AI智能客服对话响应对象")
+@Schema(description = "AI智能客服对话响应对象")
 public class AiChatVO implements Serializable {
 
-    @ApiModelProperty(value = "AI客服回复内容")
+    @Schema(description = "AI客服回复内容")
     private String reply;
 }

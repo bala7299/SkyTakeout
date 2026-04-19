@@ -2,8 +2,8 @@ package com.sky.controller.admin;
 
 import com.sky.result.Result;
 import com.sky.service.AIService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/admin/ai")
-@Api(tags = "AI 服务管理接口")
+@Tag(name = "AI 服务管理接口")
 public class AIServiceController {
 
     @Autowired
@@ -23,7 +23,7 @@ public class AIServiceController {
      * 初始化向量数据库（菜品和套餐）
      * @return 操作结果
      */
-    @ApiOperation("初始化向量数据库（菜品和套餐）")
+    @Operation(summary = "初始化向量数据库（菜品和套餐）")
     @GetMapping("/dishInit")
     public Result<String> initVectorDB() {
         log.info("接收到初始化向量数据库请求");
@@ -42,7 +42,7 @@ public class AIServiceController {
      * 初始化用户画像数据库
      * @return 操作结果
      */
-    @ApiOperation("初始化用户画像数据库")
+    @Operation(summary = "初始化用户画像数据库")
     @GetMapping("/userInit")
     public Result<String> initUserProfileDB() {
         log.info("接收到初始化用户画像数据库请求");

@@ -1,7 +1,6 @@
 package com.sky.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,27 +13,27 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel(description = "用户端历史评价返回的数据格式")
+@Schema(description = "用户端历史评价返回的数据格式")
 public class CommentVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty("主键")
+    @Schema(description = "主键")
     private Long id;
 
-    @ApiModelProperty("订单id")
+    @Schema(description = "订单id")
     private Long orderId;
 
-    @ApiModelProperty("评分：1-5分")
+    @Schema(description = "评分：1-5分")
     private Integer score;
 
-    @ApiModelProperty("原始评论内容")
+    @Schema(description = "原始评论内容")
     private String content;
 
-    @ApiModelProperty("商家回复内容")
+    @Schema(description = "商家回复内容")
     private String replyContent;
 
-    @ApiModelProperty("创建时间")
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 }
 

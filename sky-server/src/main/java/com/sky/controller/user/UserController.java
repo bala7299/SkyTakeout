@@ -12,8 +12,8 @@ import com.sky.service.UserService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.AiChatVO;
 import com.sky.vo.UserLoginVO;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +24,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/user/user")
-@Api(tags = "C端-用户相关接口")
+@Tag(name = "C端-用户相关接口")
 public class UserController {
 
     @Autowired
@@ -42,7 +42,7 @@ public class UserController {
      * @param userLoginDTO
      * @return
      */
-    @ApiOperation("用户登录")
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<UserLoginVO> login(@RequestBody  UserLoginDTO userLoginDTO) {
         //调用业务层访问微信服务器得到用户openid
@@ -56,7 +56,7 @@ public class UserController {
         UserLoginVO userLoginVO = UserLoginVO.builder().id(user.getId()).openid(user.getOpenid()).token(token).build();
         return Result.success(userLoginVO);
     }
-    @ApiOperation("客户催单")
+    @Operation(summary = "客户催单")
     @GetMapping("/reminder/{id}")
     public Result reminder(@PathVariable Long id){
         orderService.reminder(id);
@@ -68,7 +68,7 @@ public class UserController {
      * @param aiChatDTO 用户消息
      * @return AI回复
      */
-    @ApiOperation("AI智能客服对话")
+    @Operation(summary = "AI智能客服对话")
     @PostMapping("/aiChat")
     public Result<AiChatVO> aiChat(@RequestBody AiChatDTO aiChatDTO) {
         log.info("用户发起AI客服对话: {}", aiChatDTO.getMessage());

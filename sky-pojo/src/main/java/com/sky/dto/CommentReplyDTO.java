@@ -1,7 +1,6 @@
 package com.sky.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,14 +12,14 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ApiModel(description = "商家回复评价时传递的数据模型")
+@Schema(description = "商家回复评价时传递的数据模型")
 public class CommentReplyDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "评价主键id", required = true)
+    @Schema(description = "评价主键id", required = true)
     private Long id;
 
-    @ApiModelProperty(value = "商家回复内容", required = true)
+    @Schema(description = "商家回复内容", required = true)
     private String replyContent;
 }
