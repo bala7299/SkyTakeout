@@ -27,6 +27,17 @@ spring:
       password: ${sky.redis.password}
       database: ${sky.redis.datebase}
       port: ${sky.redis.port}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
 mybatis:
   #mapper配置文件
   mapper-locations: classpath:mapper/*.xml
@@ -44,14 +55,14 @@ logging:
         controller: info
 sky:
   jwt:
-    # 设置jwt签名加密时使用的秘钥
-    admin-secret-key: itcast
+    # 设置jwt签名加密时使用的秘钥（至少32字符/256位）
+    admin-secret-key: sky-takeout-admin-secret-key-2026-strong
     # 设置jwt过期时间
     admin-ttl: 720000000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
     # 用户端jwt密钥设置
-    user-secret-key: itbala
+    user-secret-key: sky-takeout-user-secret-key-2026-strong
     user-ttl: 720000000
     user-token-name: authentication
 

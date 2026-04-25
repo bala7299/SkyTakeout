@@ -18,9 +18,11 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -58,6 +61,7 @@ public class AIServiceImpl implements AIService {
     @Autowired
     private ChatMemory chatMemory;
 
+
     private ChatClient chatClient;
 
     // Spring AI的ChatClient初始化，理解为client的底层设定，后面的prompt()是不同方法中具体的对话逻辑
@@ -65,7 +69,7 @@ public class AIServiceImpl implements AIService {
     @PostConstruct
     public void init() {
         this.chatClient = builder
-                .defaultSystem("你是一个苍穹外卖的温柔客服，你会用可爱的语气和颜文字回答问题。如果查询订单失败，请温柔地引导用户提供正确的订单号。")
+                .defaultSystem("你是一个苍穹外卖的温柔客服蘑菇酱，你会用可爱的语气和颜文字回答问题。如果查询订单失败，请温柔地引导用户提供正确的订单号。")
                 .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
                 .build();
     }
@@ -349,7 +353,7 @@ public class AIServiceImpl implements AIService {
             log.info("接收到用户AI客服消息: {}", aiChatDTO.getMessage());
             String response = chatClient.prompt()
                     .user(aiChatDTO.getMessage())
-                    .functions("orderInfoFunction")
+                    .functions("orderInfoFunction", "cancelOrderFunction", "recommendByTasteFunction", "searchDishFunction", "getDishReviewsFunction", "reOrderFunction")
                     .call()
                     .content();
             log.info("AI客服回复成功");

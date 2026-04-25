@@ -14,6 +14,7 @@ import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.AIService;
+import com.sky.service.AddressBookService;
 import com.sky.service.OrderService;
 import com.sky.utils.BaiduMapUtil;
 import com.sky.utils.WeChatPayUtil;
@@ -60,6 +61,12 @@ public class OrderServiceImpl implements OrderService {
     private String shopAddress;
     @Autowired
     private WebSocketServer webSocketServer;
+    @Autowired
+    private DishMapper dishMapper;
+    @Autowired
+    private SetmealMapper setmealMapper;
+    @Autowired
+    private AddressBookService addressBookService;
     private static final Integer TYPE_NEW_ORDER = 1;
     private static final Integer TYPE_ORDER_REMINDER = 2;
 
@@ -103,6 +110,7 @@ public class OrderServiceImpl implements OrderService {
         orders.setNumber(String.valueOf(System.currentTimeMillis()));
         orders.setPhone(addressBook.getPhone());
         orders.setConsignee(addressBook.getConsignee());
+        orders.setType(0);
         orderMapper.insert(orders);
         //向订单细明表插入n条数据
         List<OrderDetail> orderDetailList = new ArrayList<>();
@@ -355,10 +363,16 @@ public class OrderServiceImpl implements OrderService {
     //- 商家拒单时需要指定拒单原因
     //- 商家拒单时，如果用户已经完成了支付，需要为用户退款
     public void rejection(OrdersRejectionDTO ordersRejectionDTO) throws Exception {
+        if (ordersRejectionDTO == null || ordersRejectionDTO.getId() == null) {
+            throw new OrderBusinessException("拒单参数不能为空");
+        }
         //获取订单
         Orders orders = orderMapper.getByOrderId(ordersRejectionDTO.getId());
+        if (orders == null) {
+            throw new OrderBusinessException("订单不存在");
+        }
         //查看是否可拒单
-        if (orders != null && orders.getStatus() == Orders.TO_BE_CONFIRMED) {
+        if (orders.getStatus() == Orders.TO_BE_CONFIRMED) {
             //查看用户是否支付
             Orders updateOrder = refund(orders);
             updateOrder.setRejectionReason(ordersRejectionDTO.getRejectionReason());
@@ -377,8 +391,14 @@ public class OrderServiceImpl implements OrderService {
     //- 商家取消订单时需要指定取消原因
     //- 商家取消订单时，如果用户已经完成了支付，需要为用户退款
     public void cancel(OrdersCancelDTO ordersCancelDTO) throws Exception {
+        if (ordersCancelDTO == null || ordersCancelDTO.getId() == null) {
+            throw new OrderBusinessException("取消订单参数不能为空");
+        }
         // 根据id查询订单
         Orders ordersDB = orderMapper.getByOrderId(ordersCancelDTO.getId());
+        if (ordersDB == null) {
+            throw new OrderBusinessException("订单不存在");
+        }
         //支付状态
         Orders updateOrder = refund(ordersDB);
         updateOrder.setCancelReason(ordersCancelDTO.getCancelReason());
@@ -386,6 +406,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private Orders refund(Orders orders) throws Exception {
+        if (orders == null) {
+            throw new OrderBusinessException("订单不存在");
+        }
         if (orders.getPayStatus() == Orders.PAID) {
             weChatPayUtil.refund(orders.getNumber(), //商户订单号
                     orders.getNumber(), //商户退款单号
@@ -514,5 +537,97 @@ public class OrderServiceImpl implements OrderService {
         map.put("content", "订单号：" + order.getNumber());
         String jsonString = JSONObject.toJSONString(map);
         webSocketServer.sendToAllClient(jsonString);
+    }
+
+    /**
+     * 创建秒杀订单
+     *
+     * @param userId 用户ID
+     * @param seckillOrderdto 秒杀下单DTO
+     * @param seckillPrice 秒杀价格
+     * @return 订单ID
+     */
+    @Transactional
+    @Override
+    public Long createSeckillOrder(Long userId, SeckillOrderDTO seckillOrderdto, BigDecimal seckillPrice) {
+        String itemId = seckillOrderdto.getItemId();
+        String itemName;
+        String itemImage;
+        Long dishId = null;
+        Long setmealId = null;
+
+        if (itemId.startsWith("D_")) {
+            dishId = Long.parseLong(itemId.substring(2));
+            Dish dish = dishMapper.selectById(dishId);
+            if (dish == null) {
+                throw new OrderBusinessException("秒杀菜品不存在");
+            }
+            itemName = dish.getName();
+            itemImage = dish.getImage();
+        } else if (itemId.startsWith("S_")) {
+            setmealId = Long.parseLong(itemId.substring(2));
+            Setmeal setmeal = setmealMapper.getById(setmealId);
+            if (setmeal == null) {
+                throw new OrderBusinessException("秒杀套餐不存在");
+            }
+            itemName = setmeal.getName();
+            itemImage = setmeal.getImage();
+        } else {
+            throw new OrderBusinessException("秒杀活动配置异常");
+        }
+
+        // 极速地址装配：优先使用传入的 addressBookId，为空则走 Redis 缓存降级
+        AddressBook addressBook;
+        Long addressBookId = seckillOrderdto.getAddressBookId();
+
+        if (addressBookId != null) {
+            // 场景1：前端传入了指定地址ID，直接查库
+            addressBook = addressBookMapper.getById(addressBookId);
+            if (addressBook == null) {
+                throw new OrderBusinessException("收货地址不存在");
+            }
+        } else {
+            // 场景2：前端未传入地址，优先读取 Redis 默认地址缓存
+            addressBook = addressBookService.getDefaultAddress(userId);
+            if (addressBook == null) {
+                throw new OrderBusinessException("请设置收货地址后再下单");
+            }
+            addressBookId = addressBook.getId();
+        }
+
+        String orderNumber = String.valueOf(System.currentTimeMillis());
+        LocalDateTime now = LocalDateTime.now();
+
+        Orders orders = new Orders();
+        orders.setNumber(orderNumber);
+        orders.setStatus(Orders.PENDING_PAYMENT);
+        orders.setUserId(userId);
+        orders.setAddressBookId(addressBookId);
+        orders.setOrderTime(now);
+        orders.setPayStatus(Orders.UN_PAID);
+        orders.setAmount(seckillPrice);
+        orders.setPhone(addressBook.getPhone());
+        orders.setConsignee(addressBook.getConsignee());
+        orders.setAddress(addressBook.getDetail());
+        orders.setPackAmount(0);
+        orders.setTablewareNumber(1);
+        orders.setTablewareStatus(1);
+        orders.setType(1);
+        orders.setRemark(seckillOrderdto.getRemarks());
+        orderMapper.insert(orders);
+
+        OrderDetail orderDetail = new OrderDetail();
+        orderDetail.setName(itemName);
+        orderDetail.setImage(itemImage);
+        orderDetail.setOrderId(orders.getId());
+        orderDetail.setDishId(dishId);
+        orderDetail.setSetmealId(setmealId);
+        orderDetail.setNumber(1);
+        orderDetail.setAmount(seckillPrice);
+        orderDetailMapper.insertBatch(List.of(orderDetail));
+
+        log.info("秒杀订单创建成功，订单ID：{}，订单号：{}，用户ID：{}，商品：{}，金额：{}", orders.getId(), orderNumber, userId, itemName, seckillPrice);
+
+        return orders.getId();
     }
 }

@@ -306,6 +306,7 @@ CREATE TABLE IF NOT EXISTS `orders`
     `pack_amount`             int                           DEFAULT NULL COMMENT '打包费',
     `tableware_number`        int                           DEFAULT NULL COMMENT '餐具数量',
     `tableware_status`        tinyint(1)     NOT NULL       DEFAULT '1' COMMENT '餐具数量状态  1按餐量提供  0选择具体数量',
+    'type'                    tinyint(1)     NOT NULL       DEFAULT '0' COMMENT '订单类型  0普通订单  1秒杀订单',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 4

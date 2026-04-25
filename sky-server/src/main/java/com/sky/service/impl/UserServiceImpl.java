@@ -12,7 +12,6 @@ import com.sky.utils.HttpClientUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.security.auth.login.LoginException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 

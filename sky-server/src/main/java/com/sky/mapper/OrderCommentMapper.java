@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,5 +65,11 @@ public interface OrderCommentMapper {
      * 指定时间范围内所有差评的正文（用于 AI 汇总）
      */
     List<String> listBadReviewContentsByDateRange(@Param("beginTime") LocalDateTime beginTime, @Param("endTime") LocalDateTime endTime);
+
+    @Select("SELECT oc.* FROM sky_take_out.order_comment oc " +
+            "LEFT JOIN sky_take_out.order_detail od ON oc.order_id = od.order_id " +
+            "WHERE od.name LIKE CONCAT('%', #{dishName}, '%') " +
+            "ORDER BY oc.score DESC LIMIT 3")
+    List<OrderComment> getTopReviewsByDishName(String dishName);
 }
 

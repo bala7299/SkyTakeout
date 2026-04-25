@@ -106,4 +106,7 @@ public interface OrderMapper {
      */
     @Select("SELECT id FROM orders WHERE user_id = #{userId} AND status = 5")
     List<Long> getCompletedOrderIdsByUserId(Long userId);
+
+    @Select("SELECT * FROM orders WHERE user_id = #{userId} AND status = 5 ORDER BY order_time DESC LIMIT 1")
+    Orders getLastCompletedOrderByUserId(Long userId);
 }

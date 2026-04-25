@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -90,4 +91,16 @@ public interface DishMapper {
      */
     @Select("SELECT * FROM dish WHERE flavor_tag IS NULL OR flavor_tag = ''")
     List<Dish> getUnlabeledDishes();
+
+    @Select("SELECT * FROM dish WHERE name LIKE CONCAT('%', #{dishName}, '%') AND status = 1")
+    List<Dish> searchByName(String dishName);
+
+    @Select("SELECT d.* FROM dish d LEFT JOIN category c ON d.category_id = c.id WHERE c.name = #{categoryName} AND d.status = 1")
+    List<Dish> searchByCategory(String categoryName);
+
+    @Select("SELECT * FROM dish WHERE status = 1 AND price <= #{maxPrice} ORDER BY price DESC")
+    List<Dish> searchByMaxPrice(BigDecimal maxPrice);
+
+    @Select("SELECT d.* FROM dish d LEFT JOIN category c ON d.category_id = c.id WHERE d.name LIKE CONCAT('%', #{dishName}, '%') AND c.name = #{categoryName} AND d.status = 1 AND d.price <= #{maxPrice}")
+    List<Dish> searchByConditions(String dishName, String categoryName, BigDecimal maxPrice);
 }

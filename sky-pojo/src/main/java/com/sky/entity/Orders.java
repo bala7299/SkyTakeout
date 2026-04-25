@@ -107,4 +107,7 @@ public class Orders implements Serializable {
 
     //餐具数量状态  1按餐量提供  0选择具体数量
     private Integer tablewareStatus;
+
+    //订单类型: 0-普通订单, 1-秒杀订单
+    private Integer type;
 }

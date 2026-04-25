@@ -47,7 +47,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
         // 用户端保安
         registry.addInterceptor(jwtTokenUserInterceptor)
                 .addPathPatterns("/user/**")
-                .excludePathPatterns("/user/user/login", "/user/shop/status", "/user/user/aiChat")
+                .excludePathPatterns("/user/user/login", "/user/shop/status", "/user/user/aiChat","/user/seckill/grab")
                 .excludePathPatterns(excludePaths); // 强行放行文档
     }
 
@@ -86,14 +86,13 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 5. 日期转换器
+     * 5. 日期转换器（扩展消息转换器以支持自定义 LocalDateTime 序列化格式）
      */
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        /**
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         converter.setObjectMapper(new JacksonObjectMapper());
-        converters.add(0, converter);
-   */
+        // 插入到默认转换器之后，避免影响 springdoc 的 JSON 序列化
+        converters.add(converters.size(), converter);
     }
 }

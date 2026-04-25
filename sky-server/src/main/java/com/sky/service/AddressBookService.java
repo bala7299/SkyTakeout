@@ -17,4 +17,11 @@ public interface AddressBookService {
 
     void deleteById(Long id);
 
+    /**
+     * 查询用户默认地址（带缓存）
+     *
+     * @param userId 用户ID
+     * @return 默认地址，无则返回null
+     */
+    AddressBook getDefaultAddress(Long userId);
 }

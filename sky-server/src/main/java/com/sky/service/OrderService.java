@@ -7,6 +7,8 @@ import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 
+import java.math.BigDecimal;
+
 public interface OrderService {
 
     /**
@@ -119,4 +121,14 @@ public interface OrderService {
      * @param id
      */
     void reminder(Long id);
+
+    /**
+     * 创建秒杀订单
+     *
+     * @param userId 用户ID
+     * @param dto 秒杀下单DTO
+     * @param seckillPrice 秒杀价格
+     * @return 订单ID
+     */
+    Long createSeckillOrder(Long userId, SeckillOrderDTO dto, BigDecimal seckillPrice);
 }
