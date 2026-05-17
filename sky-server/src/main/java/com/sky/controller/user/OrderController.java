@@ -1,6 +1,7 @@
 package com.sky.controller.user;
 
 
+import com.sky.context.BaseContext;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.result.PageResult;
@@ -35,6 +36,7 @@ public class OrderController {
     @Operation(summary = "用户下单")
     @PostMapping("/submit")
     public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
+        log.info("收到原始 JSON 数据: {}", ordersSubmitDTO);
         OrderSubmitVO orderSubmitVO = orderService.submit(ordersSubmitDTO);
         return Result.success(orderSubmitVO);
     }

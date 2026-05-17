@@ -47,7 +47,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
         // 用户端保安
         registry.addInterceptor(jwtTokenUserInterceptor)
                 .addPathPatterns("/user/**")
-                .excludePathPatterns("/user/user/login", "/user/shop/status", "/user/user/aiChat","/user/seckill/grab")
+                .excludePathPatterns("/user/user/login", "/user/shop/status")
                 .excludePathPatterns(excludePaths); // 强行放行文档
     }
 

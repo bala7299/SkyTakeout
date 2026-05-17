@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
@@ -40,20 +41,30 @@ public class OrderCommentServiceImpl implements OrderCommentService {
         log.info("处理用户评价提交：{}", commentSubmitDTO);
         Long userId = BaseContext.getCurrentId();
         String content = commentSubmitDTO.getContent();
-        String aiOptimized = fetchAiOptimizedContent(content);
 
+        // 先入库，AI 润色留空，秒级响应用户
         OrderComment orderComment = OrderComment.builder()
                 .orderId(commentSubmitDTO.getOrderId())
                 .userId(userId)
                 .score(commentSubmitDTO.getScore() != null ? commentSubmitDTO.getScore() : 5)
                 .content(content)
-                .aiOptimized(aiOptimized)
+                .aiOptimized(null)
                 .createTime(LocalDateTime.now())
                 .replyContent(null)
                 .status(0)
                 .build();
 
         orderCommentMapper.insert(orderComment);
+        Long commentId = orderComment.getId();
+
+        // 异步调 AI 润色，不阻塞用户
+        CompletableFuture.runAsync(() -> {
+            String aiOptimized = fetchAiOptimizedContent(content);
+            if (aiOptimized != null) {
+                orderCommentMapper.updateAiOptimized(commentId, aiOptimized);
+                log.info("AI 润色回填成功，commentId={}", commentId);
+            }
+        });
     }
 
     /**
@@ -98,11 +109,6 @@ public class OrderCommentServiceImpl implements OrderCommentService {
     @Override
     public void replyComment(CommentReplyDTO commentReplyDTO) {
         log.info("商家回复评价：{}", commentReplyDTO);
-        OrderComment orderComment = OrderComment.builder()
-                .id(commentReplyDTO.getId())
-                .replyContent(commentReplyDTO.getReplyContent())
-                .status(1)
-                .build();
-        orderCommentMapper.update(orderComment);
+        orderCommentMapper.replyComment(commentReplyDTO.getId(), commentReplyDTO.getReplyContent());
     }
 }

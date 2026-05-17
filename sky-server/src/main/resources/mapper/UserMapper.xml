@@ -4,25 +4,25 @@
 
 <mapper namespace="com.sky.mapper.UserMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into user(name, openid, phone, sex, create_time, id_number, avatar, flavor_profile, flavor_update_time)
+        insert into `user`(name, openid, phone, sex, create_time, id_number, avatar, flavor_profile, flavor_update_time)
             value
             (#{name}, #{openid}, #{phone}, #{sex}, #{createTime}, #{idNumber}, #{avatar}, #{flavorProfile}, #{flavorUpdateTime})
     </insert>
 
     <select id="getByOpenId" resultType="com.sky.entity.User">
         select id, openid, name, phone, sex, id_number, avatar, create_time, flavor_profile, flavor_update_time
-        from user
+        from `user`
         where openid = #{openid}
     </select>
 
     <select id="getById" resultType="com.sky.entity.User">
         select id, openid, name, phone, sex, id_number, avatar, create_time, flavor_profile, flavor_update_time
-        from user
+        from `user`
         where id = #{userId}
     </select>
 
     <update id="update">
-        update user
+        update `user`
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="phone != null">phone = #{phone},</if>
@@ -36,7 +36,7 @@
     </update>
 
     <select id="countUserByDate" resultType="java.lang.Integer">
-        select count(id) from user
+        select count(id) from `user`
         <where>
             <if test="begintime != null">
                 and create_time &gt;= #{begintime}

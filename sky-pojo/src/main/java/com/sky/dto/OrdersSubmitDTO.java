@@ -28,4 +28,8 @@ public class OrdersSubmitDTO implements Serializable {
     private Integer packAmount;
     //总金额
     private BigDecimal amount;
+    //订单类型（0-普通订单，1-秒杀订单）
+    private Integer type;
+    //业务标识（秒杀订单时为 D_菜品ID 或 S_套餐ID）
+    private String bizId;
 }

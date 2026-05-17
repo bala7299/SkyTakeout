@@ -45,8 +45,7 @@ public class RecommendServiceImpl implements RecommendService {
     public AIRecommendVO getAIRecommendation() {
         try {
             // 获取当前用户ID
-            //Long userId = BaseContext.getCurrentId();
-            Long userId = 1L;
+            Long userId = BaseContext.getCurrentId();
             // 获取当前用户的口味画像
             User user = userMapper.getById(userId);
             if (user == null) {

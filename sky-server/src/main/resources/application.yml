@@ -28,6 +28,18 @@ spring:
       database: ${sky.redis.datebase}
       port: ${sky.redis.port}
 
+  cache:
+    type: redis
+    cache-names: setmealCache
+
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: skytakeout-seckill-producer
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 3
+    retry-times-when-send-async-failed: 3
+
 springdoc:
   api-docs:
     path: /v3/api-docs

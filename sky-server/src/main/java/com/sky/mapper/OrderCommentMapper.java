@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,6 +53,14 @@ public interface OrderCommentMapper {
     void update(OrderComment orderComment);
 
     /**
+     * 商家回复评价（同步更新 reply_content 和 status=1）
+     *
+     * @param id 评价主键
+     * @param replyContent 回复内容
+     */
+    void replyComment(@Param("id") Long id, @Param("replyContent") String replyContent);
+
+    /**
      * 统计指定时间范围内差评（score &lt;= 2）数量
      */
     Integer countBadReviewsByDateRange(@Param("beginTime") LocalDateTime beginTime, @Param("endTime") LocalDateTime endTime);
@@ -65,6 +74,12 @@ public interface OrderCommentMapper {
      * 指定时间范围内所有差评的正文（用于 AI 汇总）
      */
     List<String> listBadReviewContentsByDateRange(@Param("beginTime") LocalDateTime beginTime, @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 异步回填 AI 润色文案
+     */
+    @Update("UPDATE sky_take_out.order_comment SET ai_optimized = #{aiOptimized} WHERE id = #{id}")
+    void updateAiOptimized(@Param("id") Long id, @Param("aiOptimized") String aiOptimized);
 
     @Select("SELECT oc.* FROM sky_take_out.order_comment oc " +
             "LEFT JOIN sky_take_out.order_detail od ON oc.order_id = od.order_id " +

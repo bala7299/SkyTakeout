@@ -8,6 +8,7 @@ import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.*;
 import com.sky.entity.*;
+import com.sky.enumeration.OrderType;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -85,13 +87,60 @@ public class OrderServiceImpl implements OrderService {
         if (addressBook == null) {
             throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_IS_NULL);
         }
-        //购物车是否为空
+
         Long userId = BaseContext.getCurrentId();
+        OrderType orderType = OrderType.fromCode(ordersSubmitDTO.getType());
+
+        log.info("订单提交 - 用户ID: {}, 订单类型: {}", userId, orderType.getDescription());
+
+        // 根据订单类型分流处理
+        Orders orders;
+        List<OrderDetail> orderDetailList;
+
+        switch (orderType) {
+            case SECKILL:
+                SeckillOrderDTO seckillOrderDTO = SeckillOrderDTO.builder()
+                        .itemId(ordersSubmitDTO.getBizId())
+                        .addressBookId(ordersSubmitDTO.getAddressBookId())
+                        .remarks(ordersSubmitDTO.getRemark())
+                        .build();
+                BigDecimal seckillPrice = new BigDecimal("1.00");
+                Long seckillOrderId = createSeckillOrder(userId, seckillOrderDTO, seckillPrice);
+                Orders seckillOrder = orderMapper.getByOrderId(seckillOrderId);
+                List<OrderDetail> seckillDetailList = orderDetailMapper.selectByOrderId(seckillOrderId);
+                orders = seckillOrder;
+                orderDetailList = seckillDetailList;
+                break;
+
+            case NORMAL:
+            default:
+                // 普通订单：校验购物车并生成订单
+                NormalSubmitResult normalResult = buildNormalOrder(ordersSubmitDTO, userId, addressBook);
+                orders = normalResult.orders;
+                orderDetailList = normalResult.orderDetailList;
+                break;
+        }
+
+        //封装vo返回结果
+        return OrderSubmitVO.builder()
+                .id(orders.getId())
+                .orderTime(orders.getOrderTime())
+                .orderAmount(orders.getAmount())
+                .orderNumber(orders.getNumber())
+                .build();
+    }
+
+    /**
+     * 构建普通订单
+     */
+    private NormalSubmitResult buildNormalOrder(OrdersSubmitDTO dto, Long userId, AddressBook addressBook) {
+        // 购物车是否为空
         ShoppingCart shoppingCart = ShoppingCart.builder().userId(userId).build();
-        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
-        if (list == null || list.size() == 0) {
+        List<ShoppingCart> cartList = shoppingCartMapper.list(shoppingCart);
+        if (cartList == null || cartList.isEmpty()) {
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
+
         /**
         //查看是否超出配送范围5km
         String userAddress = addressBook.getProvinceName() + addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail();
@@ -100,9 +149,10 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderBusinessException(MessageConstant.OUT_OF_DELIVERY_DISTANCE);
         }
          */
-        //向订单表插入一条数据
+
+        // 向订单表插入一条数据
         Orders orders = new Orders();
-        BeanUtils.copyProperties(ordersSubmitDTO, orders);
+        BeanUtils.copyProperties(dto, orders);
         orders.setUserId(userId);
         orders.setOrderTime(LocalDateTime.now());
         orders.setPayStatus(Orders.UN_PAID);
@@ -110,24 +160,44 @@ public class OrderServiceImpl implements OrderService {
         orders.setNumber(String.valueOf(System.currentTimeMillis()));
         orders.setPhone(addressBook.getPhone());
         orders.setConsignee(addressBook.getConsignee());
-        orders.setType(0);
+        orders.setAddress(addressBook.getProvinceName() + addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail());
+        orders.setType(OrderType.NORMAL.getCode());
+
+        BigDecimal totalAmount = cartList.stream()
+                .map(cart -> cart.getAmount().multiply(BigDecimal.valueOf(cart.getNumber())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        orders.setAmount(totalAmount);
+
+        User user = userMapper.getById(userId);
+        if (user != null) {
+            orders.setUserName(user.getName());
+        }
+
         orderMapper.insert(orders);
-        //向订单细明表插入n条数据
+
+        // 向订单明细表插入n条数据
         List<OrderDetail> orderDetailList = new ArrayList<>();
-        for (ShoppingCart cart : list) {
+        for (ShoppingCart cart : cartList) {
             OrderDetail orderDetail = new OrderDetail();
             BeanUtils.copyProperties(cart, orderDetail);
             orderDetail.setOrderId(orders.getId());
             orderDetailList.add(orderDetail);
         }
         orderDetailMapper.insertBatch(orderDetailList);
-        //清空购物车
+
+        // 清空购物车
         ShoppingCart delcart = ShoppingCart.builder().userId(userId).build();
         shoppingCartMapper.deleteByUserId(delcart);
-        //封装vo返回结果
-        OrderSubmitVO orderSubmitVO = OrderSubmitVO.builder().id(orders.getId()).orderTime(orders.getOrderTime()).orderAmount(orders.getAmount()).orderNumber(orders.getNumber()).build();
 
-        return orderSubmitVO;
+        log.info("普通订单创建成功，订单ID: {}, 商品数量: {}", orders.getId(), orderDetailList.size());
+
+        return new NormalSubmitResult(orders, orderDetailList);
+    }
+
+    /**
+     * 普通订单提交结果
+     */
+    private record NormalSubmitResult(Orders orders, List<OrderDetail> orderDetailList) {
     }
 
     /**
@@ -193,15 +263,17 @@ public class OrderServiceImpl implements OrderService {
      * @return
      */
     public PageResult pageForUser(int page, int pageSize, Integer status) {
+
         Long userId = BaseContext.getCurrentId();
-        //构造分页
-        PageHelper.startPage(page, pageSize);
         OrdersPageQueryDTO ordersPageQueryDTO = new OrdersPageQueryDTO();
         ordersPageQueryDTO.setUserId(userId);
-        ordersPageQueryDTO.setStatus(status); //根据订单情况查找
+        ordersPageQueryDTO.setStatus(status);
+
+        PageHelper.startPage(page, pageSize);
         Page<Orders> ordersPage = orderMapper.pageForUser(ordersPageQueryDTO);
+
         List<OrderVO> list = new ArrayList<>();
-        if (ordersPage != null && ordersPage.getTotal() > 0) {
+        if (ordersPage != null && !ordersPage.isEmpty()) {
             for (Orders orders : ordersPage) {
                 OrderVO orderVO = new OrderVO();
                 BeanUtils.copyProperties(orders, orderVO);
@@ -210,7 +282,9 @@ public class OrderServiceImpl implements OrderService {
                 list.add(orderVO);
             }
         }
-        return new PageResult(ordersPage.getTotal(), list);
+
+        long total = list.size();
+        return new PageResult(total, list);
     }
 
 
@@ -410,10 +484,11 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderBusinessException("订单不存在");
         }
         if (orders.getPayStatus() == Orders.PAID) {
-            weChatPayUtil.refund(orders.getNumber(), //商户订单号
+            /*weChatPayUtil.refund(orders.getNumber(), //商户订单号
                     orders.getNumber(), //商户退款单号
                     new BigDecimal(0.01),//退款金额，单位 元
                     new BigDecimal(0.01));//原订单金额
+            */
         }
         //管理端取消订单需要退款，根据订单id更新订单状态、取消原因、取消时间
         return Orders.builder().status(Orders.CANCELLED).id(orders.getId()).cancelTime(LocalDateTime.now()).payStatus(Orders.REFUND).build();
@@ -612,8 +687,14 @@ public class OrderServiceImpl implements OrderService {
         orders.setPackAmount(0);
         orders.setTablewareNumber(1);
         orders.setTablewareStatus(1);
-        orders.setType(1);
+        orders.setType(OrderType.SECKILL.getCode());
         orders.setRemark(seckillOrderdto.getRemarks());
+
+        User user = userMapper.getById(userId);
+        if (user != null) {
+            orders.setUserName(user.getName());
+        }
+
         orderMapper.insert(orders);
 
         OrderDetail orderDetail = new OrderDetail();

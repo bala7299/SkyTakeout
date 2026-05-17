@@ -7,39 +7,50 @@
     <sql id="commentPageWhere">
         <where>
             <if test="userId != null">
-                and user_id = #{userId}
+                and oc.user_id = #{userId}
             </if>
             <if test="score != null">
-                and score = #{score}
+                and oc.score = #{score}
             </if>
             <if test="orderId != null">
-                and order_id = #{orderId}
+                and oc.order_id = #{orderId}
             </if>
             <if test="status != null">
-                and status = #{status}
+                and oc.status = #{status}
             </if>
         </where>
     </sql>
 
-    <!-- 管理端：含 AI 润色字段 -->
+    <!-- 管理端：含 AI 润色字段，联查订单表取订单号，联查用户表取实时用户名 -->
     <select id="pageQuery" resultType="com.sky.vo.AdminCommentVO">
-        select id, order_id, score, content, ai_optimized, reply_content, create_time, status
-        from sky_take_out.order_comment
+        select oc.id,
+               oc.order_id,
+               oc.score,
+               oc.content,
+               oc.ai_optimized,
+               oc.reply_content,
+               oc.create_time,
+               oc.status,
+               o.number     as orderNumber,
+               COALESCE(u.name, o.user_name) as userName
+        from sky_take_out.order_comment oc
+        left join sky_take_out.orders o on oc.order_id = o.id
+        left join sky_take_out.`user` u on oc.user_id = u.id
         <include refid="commentPageWhere"/>
-        order by create_time desc
+        order by oc.create_time desc
     </select>
 
     <!-- 用户端：不含 ai_optimized，映射 CommentVO -->
     <select id="pageQuery4User" resultType="com.sky.vo.CommentVO">
-        select id,
-               order_id,
-               score,
-               content,
-               reply_content,
-               create_time
-        from sky_take_out.order_comment
+        select oc.id,
+               oc.order_id,
+               oc.score,
+               oc.content,
+               oc.reply_content,
+               oc.create_time
+        from sky_take_out.order_comment oc
         <include refid="commentPageWhere"/>
-        order by create_time desc
+        order by oc.create_time desc
     </select>
 
     <update id="update" parameterType="com.sky.entity.OrderComment">
@@ -54,6 +65,13 @@
             <if test="replyContent != null">reply_content = #{replyContent},</if>
             <if test="status != null">status = #{status},</if>
         </set>
+        where id = #{id}
+    </update>
+
+    <update id="replyComment">
+        update sky_take_out.order_comment
+        set reply_content = #{replyContent},
+            status = 1
         where id = #{id}
     </update>
 

@@ -1,6 +1,7 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.sky.context.BaseContext;
 import com.sky.dto.AiChatDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
@@ -17,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -351,16 +354,38 @@ public class AIServiceImpl implements AIService {
     public AiChatVO chat(AiChatDTO aiChatDTO) {
         try {
             log.info("接收到用户AI客服消息: {}", aiChatDTO.getMessage());
-            String response = chatClient.prompt()
+            ChatResponse response = chatClient.prompt()
                     .user(aiChatDTO.getMessage())
                     .functions("orderInfoFunction", "cancelOrderFunction", "recommendByTasteFunction", "searchDishFunction", "getDishReviewsFunction", "reOrderFunction")
                     .call()
-                    .content();
-            log.info("AI客服回复成功");
-            return AiChatVO.builder().reply(response).build();
+                    .chatResponse();
+
+            String reply = response.getResult().getOutput().getText();
+
+            String capturedIntent = BaseContext.getCurrentIntent();
+            String intent = (capturedIntent != null) ? capturedIntent : "GENERAL_CHAT";
+
+            String functionCall = null;
+            try {
+                var toolCalls = response.getResult().getOutput().getToolCalls();
+                if (toolCalls != null && !toolCalls.isEmpty()) {
+                    functionCall = toolCalls.get(0).name();
+                }
+            } catch (Exception e) {
+                log.warn("提取 ToolCall 信息失败: {}", e.getMessage());
+            }
+
+            // 从BaseContext取出函数调用产生的结构化数据
+            Object functionData = BaseContext.getFunctionData();
+
+            log.info("AI客服回复成功, 意图: {}, 函数调用: {}, 结构化数据: {}", intent, functionCall, functionData != null ? "有" : "无");
+            return AiChatVO.builder().reply(reply).intent(intent).functionCall(functionCall).functionData(functionData).build();
         } catch (Exception e) {
             log.error("AI客服对话失败: {}", e.getMessage());
-            return AiChatVO.builder().reply("抱歉，AI客服暂时无法响应，请稍后再试。").build();
+            return AiChatVO.builder().reply("抱歉，AI客服暂时无法响应，请稍后再试。").intent("GENERAL_CHAT").functionCall(null).functionData(null).build();
+        } finally {
+            BaseContext.removeIntent();
+            BaseContext.removeFunctionData();
         }
     }
 }

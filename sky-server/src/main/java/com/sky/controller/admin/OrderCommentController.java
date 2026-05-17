@@ -35,6 +35,7 @@ public class OrderCommentController {
     public Result<PageResult> page(CommentPageQueryDTO commentPageQueryDTO) {
         log.info("管理端评价分页查询：{}", commentPageQueryDTO);
         PageResult pageResult = orderCommentService.pageQuery(commentPageQueryDTO);
+        log.info(">>> 即将返回给前端的真实数据：{}", pageResult.getRecords());
         return Result.success(pageResult);
     }
 

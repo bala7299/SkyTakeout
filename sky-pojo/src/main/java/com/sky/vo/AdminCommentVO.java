@@ -38,4 +38,13 @@ public class AdminCommentVO implements Serializable {
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "状态：0未回复，1已回复")
+    private Integer status;
+
+    @Schema(description = "评价人用户名")
+    private String userName;
+
+    @Schema(description = "业务订单号")
+    private String orderNumber;
 }
